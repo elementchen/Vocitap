@@ -1,0 +1,19 @@
+ 1. 文件夹内容清单
+  该文件夹现在是一个完整的、可供他人 Clone 并直接运行的仓库镜像：
+   * src/: 所有的 Python 源代码（main.py, gui.py, transcriber.py 等）。
+   * requirements.txt: 核心依赖库清单，用户执行 pip install -r requirements.txt 即可。
+   * README.md: 详细的项目说明、安装步骤和存放逻辑文档。
+   * download_models.py: 专为开发者准备的一键模型下载脚本。
+   * start.bat & start.sh: 针对 Windows 和 Mac 的自动环境配置脚本，小白开发者双击即可完成安装并运行。
+
+  2. 标准化安装流程
+  用户拿到这个文件夹后，最标准的运行方式如下：
+
+   1 # 1. 进入目录
+   2 cd Github_release
+   3
+   4 # 2. 安装依赖 (国内用户建议使用镜像)
+   5 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+   6
+   7 # 3. 运行程序
+   8 python -m src.main
