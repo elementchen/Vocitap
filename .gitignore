@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Build and Distribution
+build/
+dist/
+*.spec
+
+# Models
+models/
+builtin_models/
+model_tmp.tar.bz2
+
+# Build and internal
+_internal/
+_installer/*.exe
+SenseVoiceInput.exe
+output/
+
+# Local Backups / Other
+手动备份/
+Github_release/
+*.rar
+*.zip
+memory.txt
+icon.ico
+
+# OS
+.DS_Store
+Thumbs.db
