@@ -20,7 +20,7 @@ class Transcriber:
         if not os.path.exists(self.model_path) or not os.path.exists(self.tokens_path):
             raise FileNotFoundError(f"未找到 ONNX 模型文件，请检查 AppData 路径。")
 
-        print(f"正在启动 Vocitap 4.5 AI 引擎 (sherpa-onnx)...")
+        print(f"正在启动 Vocitap 5.6.2 AI 引擎 (sherpa-onnx)...")
         start_time = time.time()
         
         import sherpa_onnx

@@ -16,13 +16,20 @@ class AutoStartManager:
         try:
             import winreg
             app_name = "Vocitap"
-            # 优先从环境变量获取启动器的真实路径
+            # 逻辑校准：区分源码模式与 EXE 模式
             app_path = os.environ.get("VOCITAP_EXE")
+            
+            # 如果没有 VOCITAP_EXE 环境变量且当前运行的是 python.exe，说明是源码模式
+            if not app_path and "python.exe" in sys.executable.lower():
+                print("源码模式：禁用自启动设置")
+                return
+
             if not app_path:
                 app_path = os.path.realpath(sys.executable)
             
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
             if enabled:
+                # 确保路径被引号包裹
                 winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, f'"{app_path}"')
             else:
                 try:

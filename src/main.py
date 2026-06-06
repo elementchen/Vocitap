@@ -25,6 +25,8 @@ class BleSignals(QObject):
     device_status_signal = Signal(int, int)
     mapping_signal = Signal(int, object, int)
     button_event_signal = Signal(int, int)
+    power_signal = Signal(int)
+    sleep_mode_signal = Signal(int)
 
 class VoiceInputApp:
     def __init__(self):
@@ -35,12 +37,14 @@ class VoiceInputApp:
         self.icon = None
         self.gui_callback = None
         self.init_callback = None
-        self.ble_mappings = [None, None, None]
+        self.ble_mappings = [None, None, None, None] # 支持 4 个按键
         self.ble_signals = BleSignals()
         self.ble_status_signal = self.ble_signals.status_signal
         self.ble_device_status_signal = self.ble_signals.device_status_signal
         self.ble_mapping_signal = self.ble_signals.mapping_signal
         self.ble_button_event_signal = self.ble_signals.button_event_signal
+        self.ble_power_signal = self.ble_signals.power_signal
+        self.ble_sleep_mode_signal = self.ble_signals.sleep_mode_signal
         
         self.ble_manager = BleManager()
         self.ble_manager.on_status_change = self._on_ble_status_change
@@ -54,24 +58,20 @@ class VoiceInputApp:
         self.status_timer.start(3000) # 每 3 秒强制校准一次
 
     def _sync_ble_status(self):
-        """强制校准逻辑状态与底层 client 状态，并尝试自动重连"""
+        """强制校准逻辑状态并周期性发现设备 (不使用任何持久化记忆)"""
         real_connected = self.ble_manager.is_connected
-        # 获取当前或最后记录的地址
-        addr = getattr(self.ble_manager, '_address', None) or current_config.get("last_device_address")
+        addr = getattr(self.ble_manager, '_address', None)
         
         # 1. 状态变化通知
         if real_connected != getattr(self, '_last_known_ble_state', None):
             self._last_known_ble_state = real_connected
             self.ble_status_signal.emit(real_connected, addr)
 
-        # 2. 自动重连逻辑
-        if not real_connected:
-            last_addr = current_config.get("last_device_address")
-            if last_addr:
-                now = time.time()
-                if now - getattr(self, '_last_reconnect_attempt', 0) > 10:
-                    self._last_reconnect_attempt = now
-                    self.ble_manager.connect(last_addr)
+        # 2. 绿色运行逻辑：仅在未连接且从未进行过首次探测时，自动搜寻一次
+        if not real_connected and not getattr(self, '_first_scan_done', False):
+            self._first_scan_done = True
+            log.info("Startup auto-discovery...")
+            self.start_ble_scan()
 
     def run_check_and_load(self):
         QApplication.processEvents()
@@ -147,20 +147,27 @@ class VoiceInputApp:
         if connected and address:
             current_config["last_device_address"] = address
             save_config(current_config)
+        elif not connected and address:
+            # 关键修复：连接失败时清空错误记忆，允许下次进入全量扫描
+            log.info(f"Connection failed for {address}, clearing memory.")
+            current_config["last_device_address"] = ""
+            save_config(current_config)
+        
+        # 二级防抖
+        if not connected and not address and self.ble_manager.is_connected:
+            return
+            
         self.ble_status_signal.emit(connected, address)
     def _on_ble_device_status(self, hfp, audio): self.ble_device_status_signal.emit(hfp, audio)
     def _on_ble_button_event(self, btn_id, state):
         self.ble_button_event_signal.emit(btn_id, state)
-        # 逻辑分离：BLE 按钮仅模拟键盘按键，不直接控制录音逻辑
-        mapping = self.ble_mappings[btn_id]
-        if mapping and mapping[0]:
-            self.injector.simulate_vk_key(mapping[0], mapping[1], state == 1)
+        # 硬件已改为 HID 模式直接发送按键，Python 层面不再进行二次模拟
+        # 这样可以避免在文本输入时产生重复字符，同时保留 AI 语音触发的逻辑（如果需要的话）
+        pass
 
     def start_ble_scan(self):
-        # 手动扫描时，清空已记录的设备地址，允许连接新设备
-        current_config["last_device_address"] = ""
-        save_config(current_config)
-        
+        # 逻辑修复：后台自动发现时不应清空已记录的设备地址，否则会导致“失忆”无法直连
+        # 只有在明确需要“配对新设备”时才清空（但目前是全自动模式）
         def cb(addr): 
             if addr: self.ble_manager.connect(addr)
             else: self.ble_status_signal.emit(False, None)
@@ -174,6 +181,22 @@ class VoiceInputApp:
 
     def write_ble_mapping(self, idx, vk, mod):
         self.ble_mappings[idx] = (vk, mod); self.ble_manager.write_mapping(idx, vk, mod); self.read_ble_mapping(idx)
+
+    def read_ble_power(self):
+        def cb(res):
+            if res is not None: self.ble_power_signal.emit(res)
+        self.ble_manager.read_tx_power(cb)
+
+    def write_ble_power(self, level):
+        self.ble_manager.write_tx_power(level); self.read_ble_power()
+
+    def read_ble_sleep_mode(self):
+        def cb(res):
+            if res is not None: self.ble_sleep_mode_signal.emit(res)
+        self.ble_manager.read_sleep_mode(cb)
+
+    def write_ble_sleep_mode(self, enabled):
+        self.ble_manager.write_sleep_mode(enabled); self.read_ble_sleep_mode()
 
     def start_capture_hook(self, callback):
         """启动键盘钩子用于捕获物理按键 (硬件映射用)"""
@@ -242,7 +265,9 @@ class VoiceInputApp:
     def update_icon_state(self):
         if self.icon: self.icon.icon = self.create_image('red' if self.is_recording else 'blue')
 
-    def on_quit(self, icon, item): self.icon.stop(); os._exit(0)
+    def on_quit(self, icon, item):
+        self.icon.stop()
+        os._exit(0)
 
     def show_window(self, icon=None, item=None):
         if hasattr(self, 'gui_window'): self.gui_window.show_window()

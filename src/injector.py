@@ -46,6 +46,7 @@ class Injector:
             if mask & 0x10: user32.keybd_event(0xA3, 0, flags, 0) # RCtrl
             if mask & 0x20: user32.keybd_event(0xA1, 0, flags, 0) # RShift
             if mask & 0x40: user32.keybd_event(0xA5, 0, flags, 0) # RAlt
+            if mask & 0x80: user32.keybd_event(0x5C, 0, flags, 0) # RWin
 
         if is_down:
             handle_mods(mod_mask, True)

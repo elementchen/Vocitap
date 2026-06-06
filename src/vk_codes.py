@@ -31,11 +31,15 @@ def get_vk_name(vk):
 
 def build_display_string(vk, mod):
     parts = []
-    # Order: Ctrl, Shift, Alt, Win (consistent with common usage)
-    if mod & (MOD_MASKS["LCtrl"] | MOD_MASKS["RCtrl"]): parts.append("Ctrl")
-    if mod & (MOD_MASKS["LShift"] | MOD_MASKS["RShift"]): parts.append("Shift")
-    if mod & (MOD_MASKS["LAlt"] | MOD_MASKS["RAlt"]): parts.append("Alt")
-    if mod & (MOD_MASKS["LWin"] | MOD_MASKS["RWin"]): parts.append("Win")
+    # Order: LCtrl, LShift, LAlt, LWin, RCtrl, RShift, RAlt, RWin
+    if mod & 0x01: parts.append("LCtrl")
+    if mod & 0x02: parts.append("LShift")
+    if mod & 0x04: parts.append("LAlt")
+    if mod & 0x08: parts.append("LWin")
+    if mod & 0x10: parts.append("RCtrl")
+    if mod & 0x20: parts.append("RShift")
+    if mod & 0x40: parts.append("RAlt")
+    if mod & 0x80: parts.append("RWin")
     
     parts.append(get_vk_name(vk))
     return "+".join(parts)

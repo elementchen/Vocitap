@@ -52,7 +52,12 @@ def get_system_python():
 
 def launch_main_and_wait(py_exe):
     try:
-        base_path = get_base_path()
+        # 优先使用影子部署的路径运行
+        if os.path.exists(RUNTIME_DIR):
+            base_path = RUNTIME_DIR
+        else:
+            base_path = get_base_path()
+        
         main_script = os.path.join(base_path, "src", "main.py")
         env = os.environ.copy()
         if getattr(sys, 'frozen', False):
@@ -105,6 +110,40 @@ class LauncherGUI(QMainWindow):
             if not py_exe:
                 self.log_signal.emit("错误: 未找到系统 Python 环境")
                 return
+            
+            # 影子部署与版本校准
+            base_path = get_base_path()
+            src_in_bundle = os.path.join(base_path, "src")
+            if os.path.exists(src_in_bundle):
+                # 获取内部打包的版本号
+                bundle_version = "0.0.0"
+                config_in_bundle = os.path.join(src_in_bundle, "config.py")
+                if os.path.exists(config_in_bundle):
+                    with open(config_in_bundle, 'r', encoding='utf-8') as f:
+                        match = re.search(r'VERSION\s*=\s*["\']([^"\']+)["\']', f.read())
+                        if match: bundle_version = match.group(1)
+
+                # 获取 AppData 已有的版本号
+                shadow_version = "0.0.0"
+                shadow_config = os.path.join(RUNTIME_DIR, "src", "config.py")
+                if os.path.exists(shadow_config):
+                    with open(shadow_config, 'r', encoding='utf-8') as f:
+                        match = re.search(r'VERSION\s*=\s*["\']([^"\']+)["\']', f.read())
+                        if match: shadow_version = match.group(1)
+
+                # 逻辑校准：版本不一致时强行覆盖
+                if bundle_version != shadow_version or not os.path.exists(shadow_config):
+                    self.log_signal.emit(f"更新运行环境: {shadow_version} -> {bundle_version}...")
+                    if os.path.exists(RUNTIME_DIR):
+                        try: shutil.rmtree(RUNTIME_DIR)
+                        except: pass
+                    os.makedirs(RUNTIME_DIR, exist_ok=True)
+                    dest_src = os.path.join(RUNTIME_DIR, "src")
+                    shutil.copytree(src_in_bundle, dest_src)
+                    self.log_signal.emit("环境同步完成")
+                else:
+                    self.log_signal.emit(f"环境已是最新 ({bundle_version})")
+
             if not os.path.exists(ENV_TAG_PATH):
                 self.log_signal.emit("扫描依赖...")
                 res = subprocess.run([py_exe, "-m", "pip", "list"], capture_output=True, text=True, creationflags=CREATE_NO_WINDOW)
@@ -143,7 +182,7 @@ if __name__ == "__main__":
         msg.setInformativeText("是否要强行重置并启动？")
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         if msg.exec() == QMessageBox.Yes:
-            force_cleanup_restart()
+            force_cleanup_and_restart()
         sys.exit(0)
 
     if not os.path.exists(ENV_TAG_PATH):
