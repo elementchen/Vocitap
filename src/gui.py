@@ -197,11 +197,21 @@ class DeviceSettingsPage(QWidget):
         self.refresh_btn.setStyleSheet("QPushButton { background: #0F172A; color: white; border-radius: 4px; font-size: 11px; padding: 4px; }")
         self.refresh_btn.clicked.connect(self.on_refresh_clicked)
         h_conn.addWidget(self.refresh_btn)
-        
-        self.hfp_status_lbl = QLabel("HFP: -- | Audio: --")
-        self.hfp_status_lbl.setStyleSheet("font-size: 11px; color: #94A3B8; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;")
-        h_conn.addWidget(self.hfp_status_lbl)
         conn_layout.addLayout(h_conn)
+
+        # 串口状态信息行 (第二行)
+        h_status = QHBoxLayout()
+        self.hfp_status_lbl = QLabel("HFP: -- | Audio: --")
+        self.hfp_status_lbl.setStyleSheet("font-size: 11px; color: #64748B; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;")
+        h_status.addWidget(self.hfp_status_lbl)
+        
+        self.fw_ver_lbl = QLabel(tr("hw_fw_ver") + "--")
+        self.fw_ver_lbl.setStyleSheet("font-size: 11px; color: #64748B; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;")
+        h_status.addWidget(self.fw_ver_lbl)
+        
+        h_status.addStretch()
+        conn_layout.addLayout(h_status)
+
         self.conn_group.setLayout(conn_layout)
         layout.addWidget(self.conn_group)
 
@@ -267,9 +277,6 @@ class DeviceSettingsPage(QWidget):
         self.ota_group = QGroupBox(tr("hw_fw_upgrade"))
         ota_layout = QVBoxLayout()
         v_h = QHBoxLayout()
-        self.fw_ver_lbl = QLabel(tr("hw_fw_ver") + "--")
-        self.fw_ver_lbl.setStyleSheet("font-size: 11px; color: #64748B;")
-        v_h.addWidget(self.fw_ver_lbl)
         v_h.addStretch()
         self.ota_btn = QPushButton(tr("hw_fw_btn"))
         self.ota_btn.setFixedWidth(120)
