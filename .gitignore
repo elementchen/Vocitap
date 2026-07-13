@@ -23,6 +23,7 @@ output/
 
 # Executables and compressed packages (GEMINI.md spec)
 *.exe
+!windows_app/*.exe
 *.rar
 *.zip
 _installer/
