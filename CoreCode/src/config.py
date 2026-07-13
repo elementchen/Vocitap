@@ -5,7 +5,7 @@ from pynput.keyboard import Key
 
 # 应用品牌名称
 APP_NAME = "Vocitap"
-VERSION = "5.6.4"
+VERSION = "4.9.1"
 
 # AppData 存储路径
 APPDATA_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), APP_NAME)
@@ -15,16 +15,13 @@ if not os.path.exists(APPDATA_DIR):
 CONFIG_PATH = os.path.join(APPDATA_DIR, "config.json")
 ENV_TAG_PATH = os.path.join(APPDATA_DIR, "env_ready.tag")
 LOCK_FILE = os.path.join(APPDATA_DIR, "vocitap.lock")
-RUNTIME_DIR = os.path.join(APPDATA_DIR, "runtime") # 影子部署路径
 
 DEFAULT_CONFIG = {
     "hotkey": "LCtrl", # 默认使用英文 ID
     "remove_filler": True,
     "keep_punctuation": True,
-    "language": "zh",
     "use_gpu": False,
     "auto_start": False,
-    "last_device_address": "", # 新增：保存最后一次连接的 BLE 地址
     "model_id": "iic/SenseVoiceSmall",
     "sample_rate": 16000,
     "channels": 1

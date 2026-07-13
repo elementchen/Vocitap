@@ -13,7 +13,7 @@ from src.config import current_config, save_config, get_hotkey_obj, APP_NAME, MO
 from src.recorder import Recorder
 from src.transcriber import Transcriber
 from src.injector import Injector
-from src.ble_manager import BleManager
+from src.serial_manager import SerialManager
 import pystray
 from PIL import Image, ImageDraw
 from PySide6.QtWidgets import QApplication
@@ -27,6 +27,9 @@ class BleSignals(QObject):
     button_event_signal = Signal(int, int)
     power_signal = Signal(int)
     sleep_mode_signal = Signal(int)
+    fw_ver_signal = Signal(str)
+    ota_status_signal = Signal(str)
+    ota_progress_signal = Signal(int)
 
 class VoiceInputApp:
     def __init__(self):
@@ -45,8 +48,11 @@ class VoiceInputApp:
         self.ble_button_event_signal = self.ble_signals.button_event_signal
         self.ble_power_signal = self.ble_signals.power_signal
         self.ble_sleep_mode_signal = self.ble_signals.sleep_mode_signal
+        self.ble_fw_ver_signal = self.ble_signals.fw_ver_signal
+        self.ble_ota_status_signal = self.ble_signals.ota_status_signal
+        self.ble_ota_progress_signal = self.ble_signals.ota_progress_signal
         
-        self.ble_manager = BleManager()
+        self.ble_manager = SerialManager()
         self.ble_manager.on_status_change = self._on_ble_status_change
         self.ble_manager.on_device_status = self._on_ble_device_status
         self.ble_manager.on_button_event = self._on_ble_button_event
@@ -58,7 +64,7 @@ class VoiceInputApp:
         self.status_timer.start(3000) # 每 3 秒强制校准一次
 
     def _sync_ble_status(self):
-        """强制校准逻辑状态并周期性发现设备 (不使用任何持久化记忆)"""
+        """强制校准逻辑状态并周期性发现设备"""
         real_connected = self.ble_manager.is_connected
         addr = getattr(self.ble_manager, '_address', None)
         
@@ -67,11 +73,14 @@ class VoiceInputApp:
             self._last_known_ble_state = real_connected
             self.ble_status_signal.emit(real_connected, addr)
 
-        # 2. 绿色运行逻辑：仅在未连接且从未进行过首次探测时，自动搜寻一次
+        # 2. 自动连接逻辑：仅在未连接且从未进行过首次探测时，自动尝试连接上次的端口
         if not real_connected and not getattr(self, '_first_scan_done', False):
             self._first_scan_done = True
-            log.info("Startup auto-discovery...")
-            self.start_ble_scan()
+            last_port = current_config.get("last_device_address", "")
+            if last_port:
+                import logging
+                logging.getLogger(__name__).info(f"Startup auto-connecting to last port: {last_port}...")
+                self.ble_manager.connect(last_port)
 
     def run_check_and_load(self):
         QApplication.processEvents()
@@ -166,12 +175,8 @@ class VoiceInputApp:
         pass
 
     def start_ble_scan(self):
-        # 逻辑修复：后台自动发现时不应清空已记录的设备地址，否则会导致“失忆”无法直连
-        # 只有在明确需要“配对新设备”时才清空（但目前是全自动模式）
-        def cb(addr): 
-            if addr: self.ble_manager.connect(addr)
-            else: self.ble_status_signal.emit(False, None)
-        self.ble_manager.scan(cb)
+        # 串口模式下不再执行后台 BLE 扫描
+        pass
 
     def read_ble_mapping(self, idx):
         def cb(res):
@@ -197,6 +202,49 @@ class VoiceInputApp:
 
     def write_ble_sleep_mode(self, enabled):
         self.ble_manager.write_sleep_mode(enabled); self.read_ble_sleep_mode()
+
+    def read_fw_version(self):
+        def cb(res):
+            if res: self.ble_fw_ver_signal.emit(res)
+        self.ble_manager.read_fw_version(cb)
+
+    def start_ble_ota(self, file_path):
+        """发起固件升级任务 (后台线程)"""
+        if not self.ble_manager.is_connected:
+            self.ble_ota_status_signal.emit("错误: 未连接设备")
+            return
+
+        def ota_task():
+            def prog_cb(written, total):
+                progress = int(written * 100 / total)
+                self.ble_ota_progress_signal.emit(progress)
+                self.ble_ota_status_signal.emit(f"传输中: {written}/{total} bytes ({progress}%)")
+
+            try:
+                self.ble_ota_status_signal.emit("正在准备升级固件...")
+                self.ble_ota_progress_signal.emit(0)
+
+                def on_done(future):
+                    try:
+                        success = future.result()
+                        if success:
+                            self.ble_ota_status_signal.emit("升级成功！设备正在重启...")
+                            self.ble_ota_progress_signal.emit(100)
+                        else:
+                            self.ble_ota_status_signal.emit("升级失败，请检查连接或固件文件。")
+                    except Exception as e:
+                        self.ble_ota_status_signal.emit(f"升级出错: {e}")
+
+                future = self.ble_manager.upload_firmware(file_path, prog_cb)
+                if future:
+                    future.add_done_callback(on_done)
+                else:
+                    self.ble_ota_status_signal.emit("升级失败: 无法提交任务")
+            except Exception as e:
+                self.ble_ota_status_signal.emit(f"升级出错: {e}")
+
+        import threading
+        threading.Thread(target=ota_task, daemon=True).start()
 
     def start_capture_hook(self, callback):
         """启动键盘钩子用于捕获物理按键 (硬件映射用)"""

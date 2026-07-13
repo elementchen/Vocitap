@@ -1,0 +1,13 @@
+models/
+build/
+dist/
+output/
+runtime/
+__pycache__/
+*.pyc
+*.wav
+config.json
+env_ready.tag
+*.spec
+.DS_Store
+model_tmp.tar.bz2

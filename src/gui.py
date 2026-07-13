@@ -3,7 +3,7 @@ import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QCheckBox, QPushButton, QGroupBox, 
                              QStackedWidget, QComboBox, QTabWidget, QListWidget, 
-                             QMessageBox, QFrame, QProgressBar, QScrollArea)
+                             QMessageBox, QFrame, QProgressBar, QScrollArea, QFileDialog)
 from PySide6.QtCore import Qt, Signal, QTimer, QSize, QRectF
 from PySide6.QtGui import QIcon, QFont, QColor, QPainter, QBrush, QPen, QPixmap, QPainterPath
 from src.config import current_config, save_config, APP_NAME, HOTKEY_DISPLAY_NAMES
@@ -30,12 +30,12 @@ LANG_MAP = {
         "autostart": "开机自动启动",
         "autostart_desc": "在系统启动时自动运行程序",
         "uninstall": "卸载软件和模型",
-        "hw_conn": "设备连接 (BLE)",
+        "hw_conn": "设备连接 (USB串口)",
         "hw_status": "状态: ",
         "hw_unconnected": "未连接",
         "hw_connected": "已连接",
-        "hw_scanning": "正在扫描...",
-        "hw_scan_btn": "刷新状态",
+        "hw_scanning": "正在检测...",
+        "hw_scan_btn": "刷新串口",
         "hw_disconnect": "断开连接",
         "hw_event_title": "实时按键监测",
         "hw_event_wait": "等待硬件信号...",
@@ -46,9 +46,13 @@ LANG_MAP = {
         "hw_press_key": "请按下按键...",
         "hw_write_all": "同步所有映射到硬件",
         "hw_params": "硬件高级参数",
-        "hw_tx_power": "BLE 发射功率",
+        "hw_tx_power": "发射功率",
         "hw_sleep_mode": "自动休眠模式",
         "hw_sleep_desc": "空闲时进入深度休眠以省电",
+        "hw_fw_upgrade": "固件在线升级",
+        "hw_fw_ver": "当前版本: ",
+        "hw_fw_btn": "选择固件并升级",
+        "hw_ota_title": "选择固件文件 (.bin)",
         "msg_confirm": "确认",
         "msg_success": "成功",
         "msg_write_ok": "设置已成功同步至 Vocitap 硬件。",
@@ -71,12 +75,12 @@ LANG_MAP = {
         "autostart": "Auto Start",
         "autostart_desc": "Run Vocitap on system startup",
         "uninstall": "Uninstall & Cleanup",
-        "hw_conn": "Connection (BLE)",
+        "hw_conn": "Connection (USB)",
         "hw_status": "Status: ",
         "hw_unconnected": "Disconnected",
         "hw_connected": "Connected",
-        "hw_scanning": "Scanning...",
-        "hw_scan_btn": "Refresh",
+        "hw_scanning": "Detecting...",
+        "hw_scan_btn": "Refresh Ports",
         "hw_disconnect": "Disconnect",
         "hw_event_title": "Real-time Monitor",
         "hw_event_wait": "Waiting for signal...",
@@ -90,6 +94,10 @@ LANG_MAP = {
         "hw_tx_power": "TX Power",
         "hw_sleep_mode": "Sleep Mode",
         "hw_sleep_desc": "Enable deep sleep when idle",
+        "hw_fw_upgrade": "Firmware Upgrade (OTA)",
+        "hw_fw_ver": "Current: ",
+        "hw_fw_btn": "Select & Upgrade",
+        "hw_ota_title": "Select Firmware (.bin)",
         "msg_confirm": "Confirm",
         "msg_success": "Success",
         "msg_write_ok": "Settings synced to hardware.",
@@ -145,13 +153,15 @@ class DeviceSettingsPage(QWidget):
         self.logic.ble_button_event_signal.connect(self.on_hardware_button_event)
         self.logic.ble_power_signal.connect(self.update_power_display)
         self.logic.ble_sleep_mode_signal.connect(self.update_sleep_display)
+        self.logic.ble_fw_ver_signal.connect(self.update_fw_display)
+        self.logic.ble_ota_status_signal.connect(self.update_ota_status)
+        self.logic.ble_ota_progress_signal.connect(self.update_ota_progress)
         self.capturing_idx = -1
         self.current_addr = None
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         
-        # 使用滚动区域
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
@@ -159,7 +169,7 @@ class DeviceSettingsPage(QWidget):
         layout = QVBoxLayout(scroll_content)
         layout.setSpacing(10)
 
-        # 1. 连接状态卡片 (被动显示模式)
+        # 1. 连接状态卡片
         self.conn_group = QGroupBox(tr("hw_conn"))
         conn_layout = QVBoxLayout()
         h_conn = QHBoxLayout()
@@ -168,6 +178,20 @@ class DeviceSettingsPage(QWidget):
         h_conn.addWidget(self.status_lbl)
         
         h_conn.addStretch()
+        
+        # 串口下拉选择框
+        self.port_combo = QComboBox()
+        self.port_combo.setFixedWidth(150)
+        self.port_combo.setStyleSheet("QComboBox { background: white; border: 1px solid #CBD5E1; border-radius: 4px; padding: 2px 4px; font-size: 11px; }")
+        h_conn.addWidget(self.port_combo)
+        
+        # 连接/断开控制按钮
+        self.connect_btn = QPushButton("连接")
+        self.connect_btn.setFixedWidth(60)
+        self.connect_btn.setStyleSheet("QPushButton { background: #0EA5E9; color: white; border-radius: 4px; font-size: 11px; padding: 4px; }")
+        self.connect_btn.clicked.connect(self.on_connect_clicked)
+        h_conn.addWidget(self.connect_btn)
+        
         self.refresh_btn = QPushButton(tr("hw_scan_btn"))
         self.refresh_btn.setFixedWidth(80)
         self.refresh_btn.setStyleSheet("QPushButton { background: #0F172A; color: white; border-radius: 4px; font-size: 11px; padding: 4px; }")
@@ -197,7 +221,7 @@ class DeviceSettingsPage(QWidget):
         self.param_group.setLayout(param_layout)
         layout.addWidget(self.param_group)
 
-        # 3. 按键映射卡片 (4 个按键)
+        # 3. 按键映射卡片
         self.map_group = QGroupBox(tr("hw_mapping"))
         map_layout = QVBoxLayout()
         map_layout.setSpacing(8)
@@ -239,7 +263,33 @@ class DeviceSettingsPage(QWidget):
         self.map_group.setLayout(map_layout)
         layout.addWidget(self.map_group)
 
-        # 4. 实时监测
+        # 4. 固件升级卡片
+        self.ota_group = QGroupBox(tr("hw_fw_upgrade"))
+        ota_layout = QVBoxLayout()
+        v_h = QHBoxLayout()
+        self.fw_ver_lbl = QLabel(tr("hw_fw_ver") + "--")
+        self.fw_ver_lbl.setStyleSheet("font-size: 11px; color: #64748B;")
+        v_h.addWidget(self.fw_ver_lbl)
+        v_h.addStretch()
+        self.ota_btn = QPushButton(tr("hw_fw_btn"))
+        self.ota_btn.setFixedWidth(120)
+        self.ota_btn.setStyleSheet("QPushButton { background: #334155; color: white; border-radius: 4px; font-size: 10px; padding: 4px; }")
+        self.ota_btn.clicked.connect(self.on_ota_clicked)
+        v_h.addWidget(self.ota_btn)
+        ota_layout.addLayout(v_h)
+        
+        self.ota_bar = QProgressBar()
+        self.ota_bar.setRange(0, 100); self.ota_bar.setValue(0)
+        self.ota_bar.setStyleSheet("QProgressBar { height: 10px; border-radius: 5px; } QProgressBar::chunk { background: #10B981; }")
+        ota_layout.addWidget(self.ota_bar)
+        
+        self.ota_status_lbl = QLabel(tr("hw_event_wait"))
+        self.ota_status_lbl.setStyleSheet("font-size: 10px; color: #94A3B8;")
+        ota_layout.addWidget(self.ota_status_lbl)
+        self.ota_group.setLayout(ota_layout)
+        layout.addWidget(self.ota_group)
+
+        # 5. 实时监测
         self.event_lbl = QLabel(tr("hw_event_wait"))
         self.event_lbl.setAlignment(Qt.AlignCenter)
         self.event_lbl.setStyleSheet("font-size: 12px; color: #64748B; background: #F1F5F9; border-radius: 4px; padding: 8px;")
@@ -248,47 +298,85 @@ class DeviceSettingsPage(QWidget):
         
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll)
+        
+        # 初始化刷新一次串口
+        self.refresh_ports()
+
+    def refresh_ports(self):
+        ports = self.ble.list_ports()
+        self.port_combo.clear()
+        
+        last_port = current_config.get("last_device_address", "")
+        default_idx = 0
+        
+        for idx, p in enumerate(ports):
+            desc = p["desc"]
+            port_name = p["port"]
+            self.port_combo.addItem(desc, port_name)
+            if port_name == last_port:
+                default_idx = idx
+                
+        if ports:
+            self.port_combo.setCurrentIndex(default_idx)
+
+    def on_connect_clicked(self):
+        is_conn = self.ble.is_connected
+        if is_conn:
+            self.ble.disconnect()
+        else:
+            sel_text = self.port_combo.currentText()
+            if not sel_text:
+                QMessageBox.warning(self, "警告", "请先选择一个串口！")
+                return
+            port = self.port_combo.currentData()
+            if not port:
+                port = sel_text.split(" ")[0]
+            self.status_lbl.setText("正在连接...")
+            self.ble.connect(port)
 
     def on_refresh_clicked(self):
-        self.status_lbl.setText(tr("hw_status") + tr("hw_scanning"))
-        self.logic.start_ble_scan()
+        self.refresh_ports()
 
     def refresh_status_ui(self):
-        """统一的 UI 状态刷新入口，仅显示状态"""
         is_conn = self.ble.is_connected
-        
-        # 按钮交互优化：已连接时禁用刷新，防止逻辑冲突
         self.refresh_btn.setEnabled(not is_conn)
+        self.port_combo.setEnabled(not is_conn)
+        self.ota_btn.setEnabled(is_conn)
+        
         if is_conn:
-            self.refresh_btn.setStyleSheet("QPushButton { background: #E2E8F0; color: #94A3B8; border-radius: 4px; font-size: 11px; padding: 4px; }")
-        else:
-            self.refresh_btn.setStyleSheet("QPushButton { background: #0F172A; color: white; border-radius: 4px; font-size: 11px; padding: 4px; }")
-
-        if is_conn:
+            self.refresh_btn.setStyleSheet("background: #E2E8F0; color: #94A3B8; border-radius: 4px; font-size: 11px;")
+            self.connect_btn.setText("断开" if current_config.get("language")=="zh" else "Disconnect")
+            self.connect_btn.setStyleSheet("background: #EF4444; color: white; border-radius: 4px; font-size: 11px; padding: 4px;")
             addr = self.current_addr or getattr(self.ble, '_address', '')
             addr_str = f" ({addr})" if addr else ""
             self.status_lbl.setText(f"{tr('hw_status')}{tr('hw_connected')}{addr_str}")
             self.status_lbl.setStyleSheet("font-weight: bold; color: #10B981; font-size: 14px;")
         else:
+            self.refresh_btn.setStyleSheet("background: #0F172A; color: white; border-radius: 4px; font-size: 11px;")
+            self.connect_btn.setText("连接" if current_config.get("language")=="zh" else "Connect")
+            self.connect_btn.setStyleSheet("background: #0EA5E9; color: white; border-radius: 4px; font-size: 11px; padding: 4px;")
             self.status_lbl.setText(tr("hw_status") + tr("hw_unconnected"))
             self.status_lbl.setStyleSheet("font-weight: bold; color: #64748B; font-size: 14px;")
             self.hfp_status_lbl.setText("HFP: -- | Audio: --")
+            self.fw_ver_lbl.setText(tr("hw_fw_ver") + "--")
 
     def retranslate(self):
         self.conn_group.setTitle(tr("hw_conn"))
         self.param_group.setTitle(tr("hw_params"))
         self.map_group.setTitle(tr("hw_mapping"))
+        self.ota_group.setTitle(tr("hw_fw_upgrade"))
         self.write_btn.setText(tr("hw_write_all"))
         self.refresh_btn.setText(tr("hw_scan_btn"))
+        self.ota_btn.setText(tr("hw_fw_btn"))
         self.refresh_status_ui()
-        for i, w in enumerate(self.btn_widgets):
-            w["button"].setText("Capture" if current_config.get("language")=="en" else "捕获")
+        for i, w in enumerate(self.btn_widgets): w["button"].setText("Capture" if current_config.get("language")=="en" else "捕获")
 
     def update_ble_status(self, connected, address):
         if connected:
             self.current_addr = address
             self.logic.read_ble_power()
             self.logic.read_ble_sleep_mode()
+            self.logic.read_fw_version()
         self.refresh_status_ui()
         if connected:
             for i in range(4): self.logic.read_ble_mapping(i)
@@ -307,6 +395,18 @@ class DeviceSettingsPage(QWidget):
 
     def update_sleep_display(self, enabled):
         self.sleep_cb.blockSignals(True); self.sleep_cb.setChecked(bool(enabled)); self.sleep_cb.blockSignals(False)
+
+    def update_fw_display(self, ver): self.fw_ver_lbl.setText(tr("hw_fw_ver") + ver)
+
+    def update_ota_status(self, msg): self.ota_status_lbl.setText(msg)
+
+    def update_ota_progress(self, val): self.ota_bar.setValue(val)
+
+    def on_ota_clicked(self):
+        path, _ = QFileDialog.getOpenFileName(self, tr("hw_ota_title"), "", "Firmware (*.bin);;All Files (*)")
+        if path:
+            self.ota_bar.setValue(0)
+            self.logic.start_ble_ota(path)
 
     def on_mod_changed(self):
         for w in self.btn_widgets:
@@ -367,7 +467,7 @@ class VoiceInputGUI(QMainWindow):
 
     def init_ui(self):
         self.setWindowTitle(tr("title"))
-        self.setFixedSize(550, 750)
+        self.setFixedSize(550, 800) # 增加高度容纳 OTA
         self.setWindowIcon(QIcon(get_brand_logo(256)))
         self.central_stack = QStackedWidget(); self.setCentralWidget(self.central_stack)
         

@@ -1,4 +1,4 @@
-# Python
+# Python compile files and virtual environments
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,30 +7,28 @@ env/
 venv/
 ENV/
 
-# Build and Distribution
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project Runtime and Models (GEMINI.md spec)
+_internal/
 build/
 dist/
-*.spec
-
-# Models
+runtime/
 models/
 builtin_models/
 model_tmp.tar.bz2
-
-# Build and internal
-_internal/
-_installer/*.exe
-SenseVoiceInput.exe
 output/
 
-# Local Backups / Other
-手动备份/
-Github_release/
+# Executables and compressed packages (GEMINI.md spec)
+*.exe
 *.rar
 *.zip
+_installer/
+
+# Build temporary files and specific backups
+*.spec
+_archive/
 memory.txt
 icon.ico
-
-# OS
-.DS_Store
-Thumbs.db
