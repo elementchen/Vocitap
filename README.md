@@ -25,6 +25,11 @@ Starting from version 5.7.0, the hardware connection has transitioned from BLE t
 - **Wired OTA Upgrade**: Lostless chunk-based firmare flashing over JSON Serial protocol.
 - **Bilingual & Modern UI**: Built with PySide6, presenting a polished dark-themed user-friendly interface.
 
+## 🔌 Companion Hardware
+
+Vocitap is designed to pair with our custom open-source ESP32 hardware, which features an onboard I2S microphone (e.g., INMP441) to enable seamless voice typing on desktop computers lacking built-in microphones.
+- **Firmware Open-Source Repository**: [VoxTriple_Classic](https://github.com/elementchen/VoxTriple_Classic)
+
 ## 🚀 Getting Started (Source Code Mode)
 
 ### 1. Requirements
@@ -81,6 +86,11 @@ Vocitap (Voice + Tap) 是一款将 **AI 语音输入（基于阿里巴巴 SenseV
   - 键盘配置保存在硬件 Flash 中，配置完成后无需运行本程序即可独立工作。
 - **安全 OTA 升级**：基于串口 JSON Chunk 协议流控，升级固件更稳定。
 - **现代美观 UI**：使用 PySide6 打造的高颜值深色系硬件配置及语音管理面板。
+
+## 🔌 配套开源硬件
+
+Vocitap 配套了一款基于 ESP32 芯片的开源键盘硬件。该硬件自带高保真 I2S 麦克风（如 INMP441），非常适合在没有内置麦克风的台式机上使用，即插即用即可进行语音录入。
+- **硬件固件源码仓库**：[VoxTriple_Classic](https://github.com/elementchen/VoxTriple_Classic)
 
 ## 🚀 开发者指南 (从源码运行)
 
