@@ -29,37 +29,61 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Run PyInstaller Build
-        run: |
-          cd mac_app
-          rm -rf build dist Vocitap.app
-          pyinstaller --clean Vocitap_mac.spec
-          if [ -d "dist/Vocitap.app" ]; then
-            mv dist/Vocitap.app .
-            echo "Build completed successfully!"
-          else
-            echo "Build failed!"
-            exit 1
-          fi
-          rm -rf build dist
-
-      - name: Compress App Bundle into ZIP
-        run: |
-          cd mac_app
-          zip -r Vocitap_mac.zip Vocitap.app
-
-      - name: Upload macOS Asset to Release
+      - name: Build, Compress, and Upload macOS App
+        shell: python
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-          if [ "$TAG_NAME" = "refs/heads/main" ] || [ "$TAG_NAME" = "refs/heads/latest-slim" ] || [ -z "$TAG_NAME" ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            TAG_NAME=$(gh release list --limit 1 | awk '{print $3}')
-            if [ -z "$TAG_NAME" ]; then
-              TAG_NAME="v5.7.2"
-            fi
-          fi
+          import subprocess
+          import shutil
+          import os
           
-          echo "Target Release Tag: $TAG_NAME"
+          root_dir = os.getcwd()
+          mac_app_dir = os.path.join(root_dir, "mac_app")
           
-          gh release upload "$TAG_NAME" mac_app/Vocitap_mac.zip --clobber
+          # 1. 编译
+          os.chdir(mac_app_dir)
+          for p in ["build", "dist", "Vocitap.app", "Vocitap_mac.zip"]:
+              if os.path.exists(p):
+                  if os.path.isdir(p): shutil.rmtree(p)
+                  else: os.remove(p)
+                  
+          print("1. Running PyInstaller build...")
+          subprocess.run(["pyinstaller", "--clean", "Vocitap_mac.spec"], check=True)
+          
+          if os.path.exists("dist/Vocitap.app"):
+              shutil.move("dist/Vocitap.app", ".")
+              print("Build completed successfully!")
+          else:
+              raise Exception("Build failed: Vocitap.app not found in dist")
+              
+          # 2. 压缩为 ZIP
+          print("2. Compressing Vocitap.app into Vocitap_mac.zip...")
+          subprocess.run(["zip", "-r", "Vocitap_mac.zip", "Vocitap.app"], check=True)
+          
+          # 3. 确定 Tag 名称并使用 gh CLI 上传
+          print("3. Uploading macOS asset to GitHub Release...")
+          ref = os.environ.get("GITHUB_REF", "")
+          tag_name = ref.replace("refs/tags/", "") if ref.startswith("refs/tags/") else ""
+          event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+          
+          if not tag_name or event_name == "workflow_dispatch":
+              # 如果是手动触发，查询最新 Release Tag
+              try:
+                  res = subprocess.run(["gh", "release", "list", "--limit", "1"], capture_output=True, text=True, check=True)
+                  lines = res.stdout.strip().split("\n")
+                  if lines and lines[0]:
+                      tag_name = lines[0].split()[2]
+              except Exception as e:
+                  print(f"Failed to query latest release tag: {e}")
+                  
+          if not tag_name:
+              tag_name = "v5.7.2"
+              
+          print(f"Target release tag: {tag_name}")
+          
+          # 上传
+          subprocess.run(["gh", "release", "upload", tag_name, "Vocitap_mac.zip", "--clobber"], check=True)
+          print("Successfully uploaded macOS App asset to GitHub Release!")
