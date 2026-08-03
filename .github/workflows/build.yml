@@ -70,12 +70,10 @@ jobs:
           event_name = os.environ.get("GITHUB_EVENT_NAME", "")
           
           if not tag_name or event_name == "workflow_dispatch":
-              # 如果是手动触发，查询最新 Release Tag
+              # 如果是手动触发，直接通过 gh release view 获取最新的 release tag name
               try:
-                  res = subprocess.run(["gh", "release", "list", "--limit", "1"], capture_output=True, text=True, check=True)
-                  lines = res.stdout.strip().split("\n")
-                  if lines and lines[0]:
-                      tag_name = lines[0].split()[2]
+                  res = subprocess.run(["gh", "release", "view", "--json", "tagName", "--jq", ".tagName"], capture_output=True, text=True, check=True)
+                  tag_name = res.stdout.strip()
               except Exception as e:
                   print(f"Failed to query latest release tag: {e}")
                   
