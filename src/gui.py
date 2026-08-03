@@ -47,8 +47,8 @@ LANG_MAP = {
         "hw_write_all": "同步所有映射到硬件",
         "hw_params": "硬件高级参数",
         "hw_tx_power": "发射功率",
-        "hw_sleep_mode": "自动休眠模式",
-        "hw_sleep_desc": "空闲时进入深度休眠以省电",
+        "hw_mic_enabled": "启用esp32麦克风",
+        "hw_mic_desc": "启用自带麦克风（修改后设备将自动重启）",
         "hw_fw_upgrade": "固件在线升级",
         "hw_fw_ver": "当前版本: ",
         "hw_fw_btn": "选择固件并升级",
@@ -92,8 +92,8 @@ LANG_MAP = {
         "hw_write_all": "Sync to Hardware",
         "hw_params": "Advanced Parameters",
         "hw_tx_power": "TX Power",
-        "hw_sleep_mode": "Sleep Mode",
-        "hw_sleep_desc": "Enable deep sleep when idle",
+        "hw_mic_enabled": "Enable ESP32 Mic",
+        "hw_mic_desc": "Enable onboard I2S microphone (will reboot device)",
         "hw_fw_upgrade": "Firmware Upgrade (OTA)",
         "hw_fw_ver": "Current: ",
         "hw_fw_btn": "Select & Upgrade",
@@ -152,7 +152,7 @@ class DeviceSettingsPage(QWidget):
         self.logic.ble_mapping_signal.connect(self.update_mapping_display)
         self.logic.ble_button_event_signal.connect(self.on_hardware_button_event)
         self.logic.ble_power_signal.connect(self.update_power_display)
-        self.logic.ble_sleep_mode_signal.connect(self.update_sleep_display)
+        self.logic.ble_mic_enabled_signal.connect(self.update_mic_display)
         self.logic.ble_fw_ver_signal.connect(self.update_fw_display)
         self.logic.ble_ota_status_signal.connect(self.update_ota_status)
         self.logic.ble_ota_progress_signal.connect(self.update_ota_progress)
@@ -225,9 +225,10 @@ class DeviceSettingsPage(QWidget):
         self.tx_combo.currentIndexChanged.connect(self.on_param_changed)
         param_layout.addWidget(self.tx_combo)
         param_layout.addSpacing(10)
-        self.sleep_cb = QCheckBox(tr("hw_sleep_mode"))
-        self.sleep_cb.stateChanged.connect(self.on_param_changed)
-        param_layout.addWidget(self.sleep_cb)
+        self.mic_cb = QCheckBox(tr("hw_mic_enabled"))
+        self.mic_cb.setToolTip(tr("hw_mic_desc"))
+        self.mic_cb.stateChanged.connect(self.on_param_changed)
+        param_layout.addWidget(self.mic_cb)
         self.param_group.setLayout(param_layout)
         layout.addWidget(self.param_group)
 
@@ -382,7 +383,7 @@ class DeviceSettingsPage(QWidget):
         if connected:
             self.current_addr = address
             self.logic.read_ble_power()
-            self.logic.read_ble_sleep_mode()
+            self.logic.read_ble_mic_enabled()
             self.logic.read_fw_version()
         self.refresh_status_ui()
         if connected:
@@ -395,13 +396,13 @@ class DeviceSettingsPage(QWidget):
     def on_param_changed(self):
         if not self.ble.is_connected: return
         self.logic.write_ble_power(self.tx_combo.currentIndex())
-        self.logic.write_ble_sleep_mode(1 if self.sleep_cb.isChecked() else 0)
+        self.logic.write_ble_mic_enabled(1 if self.mic_cb.isChecked() else 0)
 
     def update_power_display(self, level):
         self.tx_combo.blockSignals(True); self.tx_combo.setCurrentIndex(level); self.tx_combo.blockSignals(False)
 
-    def update_sleep_display(self, enabled):
-        self.sleep_cb.blockSignals(True); self.sleep_cb.setChecked(bool(enabled)); self.sleep_cb.blockSignals(False)
+    def update_mic_display(self, enabled):
+        self.mic_cb.blockSignals(True); self.mic_cb.setChecked(bool(enabled)); self.mic_cb.blockSignals(False)
 
     def update_fw_display(self, ver): self.fw_ver_lbl.setText(tr("hw_fw_ver") + ver)
 

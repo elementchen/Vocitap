@@ -26,7 +26,7 @@ class BleSignals(QObject):
     mapping_signal = Signal(int, object, int)
     button_event_signal = Signal(int, int)
     power_signal = Signal(int)
-    sleep_mode_signal = Signal(int)
+    mic_enabled_signal = Signal(int)
     fw_ver_signal = Signal(str)
     ota_status_signal = Signal(str)
     ota_progress_signal = Signal(int)
@@ -47,7 +47,7 @@ class VoiceInputApp:
         self.ble_mapping_signal = self.ble_signals.mapping_signal
         self.ble_button_event_signal = self.ble_signals.button_event_signal
         self.ble_power_signal = self.ble_signals.power_signal
-        self.ble_sleep_mode_signal = self.ble_signals.sleep_mode_signal
+        self.ble_mic_enabled_signal = self.ble_signals.mic_enabled_signal
         self.ble_fw_ver_signal = self.ble_signals.fw_ver_signal
         self.ble_ota_status_signal = self.ble_signals.ota_status_signal
         self.ble_ota_progress_signal = self.ble_signals.ota_progress_signal
@@ -195,13 +195,13 @@ class VoiceInputApp:
     def write_ble_power(self, level):
         self.ble_manager.write_tx_power(level); self.read_ble_power()
 
-    def read_ble_sleep_mode(self):
+    def read_ble_mic_enabled(self):
         def cb(res):
-            if res is not None: self.ble_sleep_mode_signal.emit(res)
-        self.ble_manager.read_sleep_mode(cb)
+            if res is not None: self.ble_mic_enabled_signal.emit(res)
+        self.ble_manager.read_mic_enabled(cb)
 
-    def write_ble_sleep_mode(self, enabled):
-        self.ble_manager.write_sleep_mode(enabled); self.read_ble_sleep_mode()
+    def write_ble_mic_enabled(self, enabled):
+        self.ble_manager.write_mic_enabled(enabled); self.read_ble_mic_enabled()
 
     def read_fw_version(self):
         def cb(res):

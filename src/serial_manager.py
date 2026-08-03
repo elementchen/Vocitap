@@ -266,20 +266,20 @@ class SppClient:
             return True
         return False
 
-    async def read_sleep_mode(self) -> int | None:
-        """Get the sleep mode enabled flag from cache."""
+    async def read_mic_enabled(self) -> int | None:
+        """Get the mic enabled flag from cache."""
         if not self._config_cache:
             await self._fetch_config()
-        return self._config_cache.get("sleep_mode")
+        return self._config_cache.get("mic_enabled")
 
-    async def write_sleep_mode(self, enabled: int) -> bool:
-        """Save sleep mode configuration to the ESP32."""
+    async def write_mic_enabled(self, enabled: int) -> bool:
+        """Save mic enabled configuration to the ESP32."""
         resp = await self._send_cmd({
-            "cmd": "set_sleep_mode",
+            "cmd": "set_mic_enabled",
             "enabled": enabled
         })
         if resp and resp.get("status") == "ok":
-            self._config_cache["sleep_mode"] = enabled
+            self._config_cache["mic_enabled"] = enabled
             return True
         return False
 
@@ -477,19 +477,19 @@ class SerialManager:
     def write_tx_power(self, level):
         self._run_coro(self._write_tx_power_async(level))
 
-    async def _read_sleep_mode_async(self, callback):
-        res = await self.spp.read_sleep_mode()
+    async def _read_mic_enabled_async(self, callback):
+        res = await self.spp.read_mic_enabled()
         if callback:
             callback(res)
 
-    def read_sleep_mode(self, callback):
-        self._run_coro(self._read_sleep_mode_async(callback))
+    def read_mic_enabled(self, callback):
+        self._run_coro(self._read_mic_enabled_async(callback))
 
-    async def _write_sleep_mode_async(self, enabled):
-        return await self.spp.write_sleep_mode(enabled)
+    async def _write_mic_enabled_async(self, enabled):
+        return await self.spp.write_mic_enabled(enabled)
 
-    def write_sleep_mode(self, enabled):
-        self._run_coro(self._write_sleep_mode_async(enabled))
+    def write_mic_enabled(self, enabled):
+        self._run_coro(self._write_mic_enabled_async(enabled))
 
     async def _read_fw_ver_async(self, callback):
         res = await self.spp.read_firmware_version()
