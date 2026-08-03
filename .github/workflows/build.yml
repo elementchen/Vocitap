@@ -29,11 +29,19 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Run Build Script
+      - name: Run PyInstaller Build
         run: |
-          chmod +x mac_app/build_mac.sh
           cd mac_app
-          ./build_mac.sh
+          rm -rf build dist Vocitap.app
+          pyinstaller --clean Vocitap_mac.spec
+          if [ -d "dist/Vocitap.app" ]; then
+            mv dist/Vocitap.app .
+            echo "Build completed successfully!"
+          else
+            echo "Build failed!"
+            exit 1
+          fi
+          rm -rf build dist
 
       - name: Compress App Bundle into ZIP
         run: |
