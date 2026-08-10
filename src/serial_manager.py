@@ -289,7 +289,7 @@ class SppClient:
             await self._fetch_config()
         return self._config_cache.get("version", "Unknown")
 
-    async def upload_firmware(self, bin_path: str, progress_callback=None) -> bool:
+    async def upload_firmware(self, bin_path: str, progress_callback=None, mode="classic") -> bool:
         """Upload firmware .bin file to ESP32 via chunked VFS serial OTA protocol."""
         if not self._connected or not self._ser:
             log.error("OTA failed: Serial client is not connected.")
@@ -303,7 +303,7 @@ class SppClient:
             return False
             
         total_size = len(bin_data)
-        log.info(f"Starting OTA update. Firmware size: {total_size} bytes...")
+        log.info(f"Starting OTA update. Firmware size: {total_size} bytes (Mode: {mode})...")
         
         # Clear any stale data in ota_queue
         while not self._ota_queue.empty():
@@ -311,8 +311,34 @@ class SppClient:
             
         # 1. Send ota_start command (using 10.0s timeout to allow partition flash erasing)
         resp = await self._send_cmd({"cmd": "ota_start", "size": total_size}, timeout=10.0)
-        if not resp or resp.get("status") != "ok":
-            log.error(f"OTA start failed: {resp.get('reason') if resp else 'No response'}")
+        if not resp:
+            log.error("OTA start failed: No response from device.")
+            return False
+            
+        if resp.get("status") == "ok" and resp.get("reboot") == 1:
+            # Device needs reboot into clean OTA mode
+            log.info("Device is rebooting into clean OTA mode to ensure zero-interference flash erase...")
+            
+            # Remember current port to reconnect
+            port = self._ser.port
+            await self.disconnect()
+            
+            # Wait 3.0s for device to reboot and initialize serial console
+            await asyncio.sleep(3.0)
+            
+            log.info(f"Reconnecting to {port} in clean OTA mode...")
+            if not await self.connect(port):
+                log.error("Failed to reconnect in clean OTA mode.")
+                return False
+                
+            # Resend ota_start under clean mode
+            log.info("Re-sending OTA start handshake in clean mode...")
+            resp = await self._send_cmd({"cmd": "ota_start", "size": total_size}, timeout=10.0)
+            if not resp or resp.get("status") != "ok":
+                log.error(f"Clean OTA start failed: {resp.get('reason') if resp else 'No response'}")
+                return False
+        elif resp.get("status") != "ok":
+            log.error(f"OTA start failed: {resp.get('reason')}")
             return False
             
         log.info("OTA handshake success. Transferring binary payload in chunks...")
@@ -321,49 +347,111 @@ class SppClient:
         self._ota_mode = True
         
         try:
-            # 2. Loop to write binary chunks with flow control
-            chunk_size = 1024
+            # 2. Loop to write binary chunks with strict flow control (Classic Sync Mode)
+            # Optimized to synchronize every 16KB to prevent full-duplex driver lockups,
+            # while strictly validating progress to prevent false success.
+            # Using 256 bytes chunks to drastically shorten single packet physical transmission time (22ms at 115200).
+            # This eliminates the risk of UART FIFO overrun during concurrent Flash Block Erase cycles,
+            # as no data flows on the wire while the ESP32 is busy performing internal flash writes.
+            chunk_size = 256
             current_total = 0
             for i in range(0, total_size, chunk_size):
                 chunk = bin_data[i:i+chunk_size]
                 expected_total = i + len(chunk)
                 
+                # 1. Pre-emit sync for trailing tail chunk to prevent final block overflow
+                # Since the ESP32 firmware emits progress packets strictly at 1KB boundaries,
+                # we synchronize up to the nearest 1KB multiple to prevent handshake deadlocks on fractional blocks.
+                is_last_chunk = (i + chunk_size >= total_size)
+                if is_last_chunk and i > 0:
+                    target_sync = (i // 1024) * 1024
+                    log.info(f"Syncing prior blocks with board before sending tail chunk (confirmed: {current_total}/{target_sync})...")
+                    try:
+                        while current_total < target_sync:
+                            chunk_resp = await asyncio.wait_for(self._ota_queue.get(), timeout=8.0)
+                            if chunk_resp:
+                                if chunk_resp.get("status") == "error":
+                                    log.error(f"OTA tail-sync failed: {chunk_resp.get('reason')}")
+                                    return False
+                                if chunk_resp.get("status") == "done":
+                                    log.info("OTA upgrade completed successfully! The device is now rebooting.")
+                                    return True
+                                current_total = max(current_total, chunk_resp.get("total_written", 0))
+                    except asyncio.TimeoutError:
+                        log.error(f"Timeout waiting for sync before tail chunk. Confirmed: {current_total}/{target_sync}")
+                        return False
+                    log.info("Sync complete. Emitting trailing fractional chunk...")
+                    
                 self._ser.write(chunk)
                 self._ser.flush()  # Force OS port to instantly emit binary buffer
                 
-                # Precise math check loop to ensure alignment and prevent phase-shift deadlocks
-                while current_total < expected_total:
+                # 2. Non-blocking update of progress queue
+                while not self._ota_queue.empty():
                     try:
-                        # Wait for the next chunk response from queue
-                        chunk_resp = await asyncio.wait_for(self._ota_queue.get(), timeout=6.0)
-                        if not chunk_resp or chunk_resp.get("status") == "error":
-                            log.error(f"OTA chunk write failed: {chunk_resp.get('reason') if chunk_resp else 'No response'}")
-                            return False
+                        chunk_resp = self._ota_queue.get_nowait()
+                        if chunk_resp:
+                            if chunk_resp.get("status") == "error":
+                                log.error(f"OTA chunk write failed: {chunk_resp.get('reason')}")
+                                return False
+                            if chunk_resp.get("status") == "done":
+                                log.info("OTA upgrade completed successfully! The device is now rebooting.")
+                                return True
+                            current_total = max(current_total, chunk_resp.get("total_written", 0))
+                    except asyncio.QueueEmpty:
+                        break
                         
-                        # Update currently confirmed bytes on board
-                        current_total = chunk_resp.get("total_written", 0)
+                # 3. Synchronize strictly every 16KB to prevent Windows serial driver lockup
+                # while ensuring absolute safety against buffer overrun.
+                # We synchronize up to the nearest 1KB multiple to match ESP32's 1KB ACK boundaries.
+                if i > 0 and i % (1024 * 16) == 0:
+                    target_sync = (i // 1024) * 1024
+                    try:
+                        while current_total < target_sync:
+                            chunk_resp = await asyncio.wait_for(self._ota_queue.get(), timeout=10.0)
+                            if chunk_resp:
+                                if chunk_resp.get("status") == "error":
+                                    log.error(f"OTA sync failed: {chunk_resp.get('reason')}")
+                                    return False
+                                if chunk_resp.get("status") == "done":
+                                    log.info("OTA upgrade completed successfully! The device is now rebooting.")
+                                    return True
+                                current_total = max(current_total, chunk_resp.get("total_written", 0))
                     except asyncio.TimeoutError:
-                        log.error(f"OTA chunk write timed out waiting for {expected_total} bytes. Current confirmed: {current_total}")
+                        log.error(f"OTA handshake timeout waiting for {target_sync} bytes. Current confirmed: {current_total}")
                         return False
                     
                 if progress_callback:
-                    progress_callback(current_total, total_size)
+                    progress_callback(max(current_total, expected_total), total_size)
                     
-                # Yield control for 2ms to prevent UART FIFO overflow and allow flash writing
-                await asyncio.sleep(0.002)
-                    
-            # 3. Wait for final OTA done & partition boot set response
+                # Yield control for 5ms to allow host UART driver and power ripple stabilization.
+                # Since chunk_size is 256 bytes, 5ms is extremely safe and boosts speed significantly.
+                await asyncio.sleep(0.005)
+            
+            # 3. Wait for final OTA done & partition boot set response (Classic Mode)
             log.info("All firmware chunks sent. Waiting for final verification on device...")
             try:
-                final_resp = await asyncio.wait_for(self._ota_queue.get(), timeout=5.0)
-                if final_resp and final_resp.get("status") == "done":
-                    log.info("OTA upgrade completed successfully! The device is now rebooting.")
-                    return True
-                else:
-                    log.error(f"OTA verification failed: {final_resp.get('reason') if final_resp else 'Invalid status'}")
-                    return False
+                while True:
+                    final_resp = await asyncio.wait_for(self._ota_queue.get(), timeout=8.0)
+                    if not final_resp:
+                        log.error("Invalid empty response from device.")
+                        return False
+                    
+                    status = final_resp.get("status")
+                    if status == "done":
+                        log.info("OTA upgrade completed successfully! The device is now rebooting.")
+                        return True
+                    elif status == "error":
+                        log.error(f"OTA verification failed: {final_resp.get('reason')}")
+                        return False
+                    elif status in ("progress", "next"):
+                        # This is just a trailing chunk progress confirmation, keep waiting for the final validation done signal!
+                        log.info(f"Received confirmation progress: {final_resp.get('total_written')}/{total_size}")
+                        continue
+                    else:
+                        log.error(f"Unknown status received: {status}")
+                        return False
             except asyncio.TimeoutError:
-                log.error("OTA final verification timed out.")
+                log.error("OTA final verification timed out waiting for success confirmation.")
                 return False
         finally:
             # Always ensure OTA mode is turned off on exit

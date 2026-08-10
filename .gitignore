@@ -31,7 +31,9 @@ _installer/
 # Build temporary files and specific backups
 *.spec
 !windows_app/*.spec
-!mac_app/*.spec
 _archive/
 memory.txt
 icon.ico
+
+# Decouple macOS build from windows development
+mac_app/

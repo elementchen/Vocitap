@@ -5,7 +5,7 @@ from pynput.keyboard import Key
 
 # 应用品牌名称
 APP_NAME = "Vocitap"
-VERSION = "5.7.2"
+VERSION = "5.7.3"
 
 # AppData 存储路径
 APPDATA_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), APP_NAME)
