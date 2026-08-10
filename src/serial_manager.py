@@ -67,7 +67,7 @@ class SppClient:
         result.sort(key=lambda x: x["is_bt"], reverse=True)
         return result
 
-    async def connect(self, port: str) -> bool:
+    async def connect(self, port: str, fetch_config: bool = True) -> bool:
         """Open the serial port, start the read thread, and fetch configuration."""
         try:
             log.info(f"Connecting to serial port {port}...")
@@ -97,14 +97,20 @@ class SppClient:
             self._read_thread = threading.Thread(target=self._run_read_loop, daemon=True)
             self._read_thread.start()
             
-            # Delay to wait for ESP32 boot sequence to finish if reset was triggered
-            log.info("Waiting 2.5 seconds for device boot stabilization...")
-            await asyncio.sleep(2.5)
-            
-            # Fetch device configuration to populate cache
-            ok = await self._fetch_config()
-            if not ok:
-                log.warning("Failed to fetch initial configuration from device.")
+            if fetch_config:
+                # Delay to wait for ESP32 boot sequence to finish if reset was triggered
+                log.info("Waiting 2.5 seconds for device boot stabilization...")
+                await asyncio.sleep(2.5)
+                
+                # Fetch device configuration to populate cache
+                ok = await self._fetch_config()
+                if not ok:
+                    log.warning("Failed to fetch initial configuration from device.")
+            else:
+                # Bypassing configuration fetching, but wait 1.5s to ensure hardware stability 
+                # in case opening the port triggered CH340/CP2102 hardware DTR reset
+                log.info("Waiting 1.5 seconds for device stabilization during OTA reconnect...")
+                await asyncio.sleep(1.5)
                 
             log.info(f"SPP Client successfully connected to {port}")
             return True
@@ -327,7 +333,7 @@ class SppClient:
             await asyncio.sleep(3.0)
             
             log.info(f"Reconnecting to {port} in clean OTA mode...")
-            if not await self.connect(port):
+            if not await self.connect(port, fetch_config=False):
                 log.error("Failed to reconnect in clean OTA mode.")
                 return False
                 
