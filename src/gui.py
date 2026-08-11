@@ -11,211 +11,6 @@ from src.autostart import AutoStartManager
 from src.vk_codes import VK_MAP, MOD_MASKS, build_display_string
 
 print(">>> VOCITAP GUI LOADED (VERSION 5.6.3 SLIM) <<<")
-GLOBAL_STYLE = """
-QMainWindow {
-    background-color: #F8FAFC;
-}
-
-QTabWidget::pane {
-    border: 1px solid #E2E8F0;
-    border-top: none;
-    background-color: #FFFFFF;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-}
-
-QTabBar::tab {
-    background-color: #F1F5F9;
-    color: #64748B;
-    border: 1px solid #E2E8F0;
-    border-bottom: none;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    padding: 8px 18px;
-    font-weight: bold;
-    font-size: 11px;
-}
-
-QTabBar::tab:selected {
-    background-color: #FFFFFF;
-    color: #0EA5E9;
-    border: 1px solid #E2E8F0;
-    border-bottom: 2px solid #0EA5E9;
-}
-
-QTabBar::tab:hover {
-    background-color: #E2E8F0;
-    color: #0F172A;
-}
-
-QGroupBox {
-    background-color: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 12px;
-    margin-top: 20px;
-    padding: 16px;
-    font-weight: bold;
-    font-size: 13px;
-    color: #0EA5E9;
-}
-
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    left: 12px;
-    padding: 2px 8px;
-    background-color: #F8FAFC;
-    border: 1px solid #E2E8F0;
-    border-radius: 6px;
-}
-
-QLabel {
-    color: #0F172A;
-    font-size: 12px;
-}
-
-QPushButton {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0EA5E9, stop:1 #0284C7);
-    color: #FFFFFF;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-weight: bold;
-    font-size: 12px;
-}
-
-QPushButton:hover {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #38BDF8, stop:1 #0EA5E9);
-}
-
-QPushButton:pressed {
-    background: #0369A1;
-}
-
-QPushButton:disabled {
-    background: #E2E8F0;
-    color: #94A3B8;
-}
-
-QPushButton#danger_btn {
-    background: #FEF2F2;
-    border: 1px solid #FCA5A5;
-    color: #EF4444;
-}
-
-QPushButton#danger_btn:hover {
-    background: #EF4444;
-    color: #FFFFFF;
-}
-
-QPushButton#dark_btn {
-    background: #F1F5F9;
-    border: 1px solid #CBD5E1;
-    color: #334155;
-}
-
-QPushButton#dark_btn:hover {
-    background: #E2E8F0;
-    color: #0F172A;
-}
-
-QPushButton#accent_btn {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F97316, stop:1 #EA580C);
-    color: #FFFFFF;
-}
-
-QPushButton#accent_btn:hover {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #FB923C, stop:1 #F97316);
-}
-
-QComboBox {
-    background-color: #FFFFFF;
-    border: 1px solid #CBD5E1;
-    border-radius: 8px;
-    padding: 4px 8px;
-    color: #0F172A;
-    font-size: 12px;
-}
-
-QComboBox::drop-down {
-    border: none;
-}
-
-QComboBox QAbstractItemView {
-    background-color: #FFFFFF;
-    border: 1px solid #CBD5E1;
-    color: #0F172A;
-    selection-background-color: #0EA5E9;
-    selection-color: #FFFFFF;
-}
-
-QCheckBox {
-    color: #0F172A;
-    font-size: 12px;
-}
-
-QCheckBox::indicator {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    border: 1px solid #CBD5E1;
-    background-color: #FFFFFF;
-}
-
-QCheckBox::indicator:checked {
-    background-color: #0EA5E9;
-    border: 1px solid #0EA5E9;
-}
-
-QProgressBar {
-    background-color: #F1F5F9;
-    border: 1px solid #CBD5E1;
-    border-radius: 6px;
-    text-align: center;
-    color: #334155;
-    font-weight: bold;
-}
-
-QProgressBar::chunk {
-    background-color: #0EA5E9;
-    border-radius: 5px;
-}
-
-QScrollArea {
-    background: transparent;
-    border: none;
-}
-
-QScrollBar:vertical {
-    background: #F8FAFC;
-    width: 8px;
-    margin: 0px;
-}
-
-QScrollBar::handle:vertical {
-    background: #CBD5E1;
-    min-height: 20px;
-    border-radius: 4px;
-}
-
-QScrollBar::handle:vertical:hover {
-    background: #94A3B8;
-}
-
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-    border: none;
-    background: none;
-}
-
-QLabel#capsule_lbl {
-    font-size: 11px;
-    color: #64748B;
-    background-color: #F1F5F9;
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid #E2E8F0;
-}
-"""
 
 # ==========================================================
 # 国际化语言包
@@ -318,20 +113,12 @@ def tr(key):
     return LANG_MAP.get(lang, LANG_MAP["zh"]).get(key, key)
 
 def get_brand_logo(size=32):
-    """尝试加载自定义高清 icon.png 图标，若不存在则回退绘制圆角标志"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    icon_path = os.path.join(current_dir, "icon.png")
-    
-    if os.path.exists(icon_path):
-        pixmap = QPixmap(icon_path)
-        if not pixmap.isNull():
-            return pixmap.scaled(size, size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            
-    # 背景
+    """绘制现代化的圆角图标"""
     result = QPixmap(size, size)
     result.fill(Qt.transparent)
     painter = QPainter(result)
     painter.setRenderHint(QPainter.Antialiasing)
+    # 背景
     bg_color = QColor("#0EA5E9")
     painter.setPen(Qt.NoPen)
     painter.setBrush(bg_color)
@@ -386,7 +173,8 @@ class DeviceSettingsPage(QWidget):
         self.conn_group = QGroupBox(tr("hw_conn"))
         conn_layout = QVBoxLayout()
         h_conn = QHBoxLayout()
-        self.status_lbl = QLabel(tr("hw_status") + f"<span style='color: #EF4444; font-weight: bold;'>●</span> {tr('hw_unconnected')}")
+        self.status_lbl = QLabel(tr("hw_status") + tr("hw_unconnected"))
+        self.status_lbl.setStyleSheet("font-weight: bold; color: #64748B; font-size: 14px;")
         h_conn.addWidget(self.status_lbl)
         
         h_conn.addStretch()
@@ -394,17 +182,19 @@ class DeviceSettingsPage(QWidget):
         # 串口下拉选择框
         self.port_combo = QComboBox()
         self.port_combo.setFixedWidth(150)
+        self.port_combo.setStyleSheet("QComboBox { background: white; border: 1px solid #CBD5E1; border-radius: 4px; padding: 2px 4px; font-size: 11px; }")
         h_conn.addWidget(self.port_combo)
         
         # 连接/断开控制按钮
         self.connect_btn = QPushButton("连接")
         self.connect_btn.setFixedWidth(60)
+        self.connect_btn.setStyleSheet("QPushButton { background: #0EA5E9; color: white; border-radius: 4px; font-size: 11px; padding: 4px; }")
         self.connect_btn.clicked.connect(self.on_connect_clicked)
         h_conn.addWidget(self.connect_btn)
         
         self.refresh_btn = QPushButton(tr("hw_scan_btn"))
         self.refresh_btn.setFixedWidth(80)
-        self.refresh_btn.setObjectName("dark_btn")
+        self.refresh_btn.setStyleSheet("QPushButton { background: #0F172A; color: white; border-radius: 4px; font-size: 11px; padding: 4px; }")
         self.refresh_btn.clicked.connect(self.on_refresh_clicked)
         h_conn.addWidget(self.refresh_btn)
         conn_layout.addLayout(h_conn)
@@ -412,11 +202,11 @@ class DeviceSettingsPage(QWidget):
         # 串口状态信息行 (第二行)
         h_status = QHBoxLayout()
         self.hfp_status_lbl = QLabel("HFP: -- | Audio: --")
-        self.hfp_status_lbl.setObjectName("capsule_lbl")
+        self.hfp_status_lbl.setStyleSheet("font-size: 11px; color: #64748B; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;")
         h_status.addWidget(self.hfp_status_lbl)
         
         self.fw_ver_lbl = QLabel(tr("hw_fw_ver") + "--")
-        self.fw_ver_lbl.setObjectName("capsule_lbl")
+        self.fw_ver_lbl.setStyleSheet("font-size: 11px; color: #64748B; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;")
         h_status.addWidget(self.fw_ver_lbl)
         
         h_status.addStretch()
@@ -449,7 +239,7 @@ class DeviceSettingsPage(QWidget):
         self.btn_widgets = []
         for i in range(4):
             btn_box = QFrame()
-            btn_box.setStyleSheet("QFrame { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; }")
+            btn_box.setStyleSheet("QFrame { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; }")
             btn_inner = QVBoxLayout(btn_box)
             h1 = QHBoxLayout()
             title = QLabel(f"{tr('hw_btn')} {i+1}")
@@ -460,7 +250,7 @@ class DeviceSettingsPage(QWidget):
             h1.addWidget(disp, 1, Qt.AlignCenter)
             cap_btn = QPushButton("Capture")
             cap_btn.setFixedWidth(70)
-            cap_btn.setObjectName("dark_btn")
+            cap_btn.setStyleSheet("QPushButton { background: #334155; color: white; font-size: 10px; padding: 4px; }")
             cap_btn.clicked.connect(lambda checked, idx=i: self.start_capture(idx))
             h1.addWidget(cap_btn)
             btn_inner.addLayout(h1)
@@ -477,7 +267,8 @@ class DeviceSettingsPage(QWidget):
             self.btn_widgets.append({"label": disp, "button": cap_btn, "mods": mods, "vk": 0, "current_mod": 0})
         
         self.write_btn = QPushButton(tr("hw_write_all"))
-        self.write_btn.setObjectName("accent_btn")
+        self.write_btn.setMinimumHeight(36)
+        self.write_btn.setStyleSheet("background-color: #F97316; color: white; border-radius: 6px; font-weight: bold;")
         self.write_btn.clicked.connect(self.on_write_all_clicked)
         map_layout.addWidget(self.write_btn)
         self.map_group.setLayout(map_layout)
@@ -490,18 +281,18 @@ class DeviceSettingsPage(QWidget):
         v_h.addStretch()
         self.ota_btn = QPushButton(tr("hw_fw_btn"))
         self.ota_btn.setFixedWidth(120)
-        self.ota_btn.setObjectName("dark_btn")
+        self.ota_btn.setStyleSheet("QPushButton { background: #334155; color: white; border-radius: 4px; font-size: 10px; padding: 4px; }")
         self.ota_btn.clicked.connect(self.on_ota_clicked)
         v_h.addWidget(self.ota_btn)
         ota_layout.addLayout(v_h)
         
         self.ota_bar = QProgressBar()
         self.ota_bar.setRange(0, 100); self.ota_bar.setValue(0)
-        self.ota_bar.setFixedHeight(12)
+        self.ota_bar.setStyleSheet("QProgressBar { height: 10px; border-radius: 5px; } QProgressBar::chunk { background: #10B981; }")
         ota_layout.addWidget(self.ota_bar)
         
         self.ota_status_lbl = QLabel(tr("hw_event_wait"))
-        self.ota_status_lbl.setStyleSheet("color: #64748B; font-size: 10px;")
+        self.ota_status_lbl.setStyleSheet("font-size: 10px; color: #94A3B8;")
         ota_layout.addWidget(self.ota_status_lbl)
         self.ota_group.setLayout(ota_layout)
         layout.addWidget(self.ota_group)
@@ -548,7 +339,7 @@ class DeviceSettingsPage(QWidget):
             port = self.port_combo.currentData()
             if not port:
                 port = sel_text.split(" ")[0]
-            self.status_lbl.setText(f"{tr('hw_status')}<span style='color: #F59E0B; font-weight: bold;'>●</span> 正在连接...")
+            self.status_lbl.setText("正在连接...")
             self.ble.connect(port)
 
     def on_refresh_clicked(self):
@@ -561,21 +352,21 @@ class DeviceSettingsPage(QWidget):
         self.ota_btn.setEnabled(is_conn)
         
         if is_conn:
+            self.refresh_btn.setStyleSheet("background: #E2E8F0; color: #94A3B8; border-radius: 4px; font-size: 11px;")
             self.connect_btn.setText("断开" if current_config.get("language")=="zh" else "Disconnect")
-            self.connect_btn.setObjectName("danger_btn")
+            self.connect_btn.setStyleSheet("background: #EF4444; color: white; border-radius: 4px; font-size: 11px; padding: 4px;")
             addr = self.current_addr or getattr(self.ble, '_address', '')
             addr_str = f" ({addr})" if addr else ""
-            self.status_lbl.setText(f"{tr('hw_status')}<span style='color: #10B981; font-weight: bold;'>●</span> {tr('hw_connected')}{addr_str}")
+            self.status_lbl.setText(f"{tr('hw_status')}{tr('hw_connected')}{addr_str}")
+            self.status_lbl.setStyleSheet("font-weight: bold; color: #10B981; font-size: 14px;")
         else:
+            self.refresh_btn.setStyleSheet("background: #0F172A; color: white; border-radius: 4px; font-size: 11px;")
             self.connect_btn.setText("连接" if current_config.get("language")=="zh" else "Connect")
-            self.connect_btn.setObjectName("")
-            self.status_lbl.setText(tr("hw_status") + f"<span style='color: #EF4444; font-weight: bold;'>●</span> {tr('hw_unconnected')}")
+            self.connect_btn.setStyleSheet("background: #0EA5E9; color: white; border-radius: 4px; font-size: 11px; padding: 4px;")
+            self.status_lbl.setText(tr("hw_status") + tr("hw_unconnected"))
+            self.status_lbl.setStyleSheet("font-weight: bold; color: #64748B; font-size: 14px;")
             self.hfp_status_lbl.setText("HFP: -- | Audio: --")
             self.fw_ver_lbl.setText(tr("hw_fw_ver") + "--")
-            
-        # 刷新连接按钮样式
-        self.connect_btn.style().unpolish(self.connect_btn)
-        self.connect_btn.style().polish(self.connect_btn)
 
     def retranslate(self):
         self.conn_group.setTitle(tr("hw_conn"))
@@ -683,7 +474,6 @@ class VoiceInputGUI(QMainWindow):
         self.logic.init_callback = self.init_signal.emit
 
     def init_ui(self):
-        self.setStyleSheet(GLOBAL_STYLE)
         self.setWindowTitle(tr("title"))
         self.setFixedSize(550, 800) # 增加高度容纳 OTA
         self.setWindowIcon(QIcon(get_brand_logo(256)))
@@ -693,7 +483,7 @@ class VoiceInputGUI(QMainWindow):
         init_layout.setAlignment(Qt.AlignCenter)
         logo_lbl = QLabel(); logo_lbl.setPixmap(get_brand_logo(80)); logo_lbl.setAlignment(Qt.AlignCenter)
         init_layout.addWidget(logo_lbl)
-        self.init_title_lbl = QLabel(tr("init_title")); self.init_title_lbl.setStyleSheet("font-size: 18px; font-weight: bold; color: #0EA5E9; margin-top: 20px;")
+        self.init_title_lbl = QLabel(tr("init_title")); self.init_title_lbl.setStyleSheet("font-size: 18px; font-weight: bold; margin-top: 20px;")
         init_layout.addWidget(self.init_title_lbl)
         self.init_status_lbl = QLabel(tr("init_status")); self.init_status_lbl.setStyleSheet("color: #64748B; margin-bottom: 20px;")
         init_layout.addWidget(self.init_status_lbl)
@@ -708,6 +498,11 @@ class VoiceInputGUI(QMainWindow):
         header.addWidget(self.lang_combo); app_layout.addLayout(header)
         
         self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane { border: 1px solid #E2E8F0; border-top: none; background: white; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+            QTabBar::tab { background: #F1F5F9; color: #64748B; padding: 10px 20px; border-top-left-radius: 4px; border-top-right-radius: 4px; }
+            QTabBar::tab:selected { background: white; color: #0EA5E9; font-weight: bold; border-top: 2px solid #0EA5E9; }
+        """)
         
         self.control_tab = QWidget(); ctrl_layout = QVBoxLayout(self.control_tab)
         self.status_label = QLabel(tr("ready")); self.status_label.setAlignment(Qt.AlignCenter)
@@ -722,17 +517,16 @@ class VoiceInputGUI(QMainWindow):
         
         def add_toggle(key, title, desc):
             w = QWidget(); l = QVBoxLayout(w); l.setContentsMargins(0,0,0,0); l.setSpacing(2)
-            cb = QCheckBox(title); cb.setStyleSheet("font-weight: bold; font-size: 13px; color: #0F172A;")
+            cb = QCheckBox(title); cb.setStyleSheet("font-weight: bold; font-size: 14px;")
             cb.setChecked(current_config.get(key, True if key != "auto_start" else False))
             cb.stateChanged.connect(self.on_config_changed); l.addWidget(cb)
-            dl = QLabel(desc); dl.setStyleSheet("color: #64748B; font-size: 11px; margin-left: 24px;"); l.addWidget(dl); settings_layout.addWidget(w)
+            dl = QLabel(desc); dl.setStyleSheet("color: #94A3B8; font-size: 11px; margin-left: 24px;"); l.addWidget(dl); settings_layout.addWidget(w)
             return cb
         self.filler_cb = add_toggle("remove_filler", tr("filter_filler"), tr("filler_desc"))
         self.punc_cb = add_toggle("keep_punctuation", tr("smart_punc"), tr("punc_desc"))
         self.autostart_cb = add_toggle("auto_start", tr("autostart"), tr("autostart_desc"))
         
-        self.uninstall_btn = QPushButton(tr("uninstall"))
-        self.uninstall_btn.setObjectName("danger_btn")
+        self.uninstall_btn = QPushButton(tr("uninstall")); self.uninstall_btn.setStyleSheet("color: #EF4444; border: 1px solid #FCA5A5; padding: 6px; border-radius: 4px;")
         self.uninstall_btn.clicked.connect(self.on_uninstall); settings_layout.addWidget(self.uninstall_btn)
         self.base_group.setLayout(settings_layout); ctrl_layout.addWidget(self.base_group); ctrl_layout.addStretch()
         
@@ -740,35 +534,35 @@ class VoiceInputGUI(QMainWindow):
         self.device_tab = DeviceSettingsPage(self.logic); self.tabs.addTab(self.device_tab, tr("hardware_tab"))
         app_layout.addWidget(self.tabs); self.central_stack.addWidget(self.main_app_widget); self.central_stack.addWidget(self.init_page)
         self.central_stack.setCurrentWidget(self.main_app_widget)
- 
+
     def on_lang_changed(self, index):
         current_config["language"] = "zh" if index == 0 else "en"; save_config(current_config); self.retranslate_ui()
- 
+
     def retranslate_ui(self):
         self.setWindowTitle(tr("title")); self.init_title_lbl.setText(tr("init_title")); self.init_status_lbl.setText(tr("init_status"))
         is_listening = self.status_label.text() in [LANG_MAP["zh"]["listening"], LANG_MAP["en"]["listening"]]
         self.status_label.setText(tr("listening") if is_listening else tr("ready"))
         self.base_group.setTitle(tr("voice_tab")); self.uninstall_btn.setText(tr("uninstall"))
         self.tabs.setTabText(0, tr("voice_tab")); self.tabs.setTabText(1, tr("hardware_tab")); self.device_tab.retranslate(); self.repaint()
- 
+
     def on_config_changed(self):
         current_config["hotkey"] = self.hk_combo.currentData(); current_config["remove_filler"] = self.filler_cb.isChecked()
         current_config["keep_punctuation"] = self.punc_cb.isChecked(); current_config["auto_start"] = self.autostart_cb.isChecked()
         save_config(current_config); AutoStartManager.set_auto_start(current_config["auto_start"])
- 
+
     def show_window(self):
         self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive); self.show(); self.showNormal(); self.activateWindow(); self.raise_()
- 
+
     def update_init_item(self, data):
         if data.get("item") == "SWITCH_TO_INIT": self.central_stack.setCurrentWidget(self.init_page)
         elif data.get("item") == "SWITCH_TO_MAIN": self.central_stack.setCurrentWidget(self.main_app_widget)
         self.repaint()
- 
+
     def update_status(self, text):
         is_l = any(x in text for x in ["录音", "聆听", "Listening", "Recording"])
         self.status_label.setText(tr("listening") if is_l else tr("ready"))
         self.status_label.setStyleSheet(f"font-size: 20px; font-weight: bold; color: {'#EF4444' if is_l else '#0EA5E9'}; margin: 20px;"); self.repaint()
- 
+
     def on_uninstall(self):
         if QMessageBox.question(self, tr("msg_confirm"), tr("msg_uninstall_body"), QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes: os._exit(0)
 
