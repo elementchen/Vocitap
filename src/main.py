@@ -296,15 +296,25 @@ class VoiceInputApp:
             time.sleep(1.5); self.notify_status(f"按住 {current_config.get('hotkey')} 说话")
 
     def create_image(self, color):
-        # 绘制现代化的圆角麦克风图标
+        # 优先读取高清 icon.png 作为托盘底图，未录音时显示原图，录音时叠加大号亮红 REC 指示灯
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
+        if os.path.exists(icon_path):
+            try:
+                base_img = Image.open(icon_path).convert('RGBA').resize((64, 64), Image.Resampling.LANCZOS)
+                if color == 'red':
+                    draw = ImageDraw.Draw(base_img)
+                    # 右上角绘制红色高亮 REC 录音控制指示圆点
+                    draw.ellipse([42, 6, 58, 22], fill=(239, 68, 68, 255), outline=(255, 255, 255, 255), width=2)
+                return base_img
+            except Exception as e:
+                print(f"Error loading tray icon.png: {e}")
+
+        # 回退备用绘制
         img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         bg_color = (239, 68, 68, 255) if color == 'red' else (14, 165, 233, 255)
-        # 画圆角矩形背景
         draw.rounded_rectangle([4, 4, 60, 60], radius=12, fill=bg_color)
-        # 画白色麦克风主体
         draw.rounded_rectangle([24, 12, 40, 40], radius=8, fill=(255, 255, 255, 255))
-        # 画支架
         draw.arc([16, 24, 48, 48], start=0, end=180, fill=(255, 255, 255, 255), width=4)
         draw.rectangle([30, 48, 34, 54], fill=(255, 255, 255, 255))
         draw.rounded_rectangle([20, 54, 44, 58], radius=2, fill=(255, 255, 255, 255))
