@@ -13,47 +13,50 @@ from src.vk_codes import VK_MAP, MOD_MASKS, build_display_string
 print(">>> VOCITAP GUI LOADED (VERSION 5.6.3 SLIM) <<<")
 GLOBAL_STYLE = """
 QMainWindow {
-    background-color: #0F172A;
+    background-color: #F8FAFC;
 }
 
 QTabWidget::pane {
-    border: none;
-    background-color: #0F172A;
+    border: 1px solid #E2E8F0;
+    border-top: none;
+    background-color: #FFFFFF;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
 
 QTabBar::tab {
-    background-color: #1E293B;
-    color: #94A3B8;
-    border: 1px solid #334155;
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
     border-bottom: none;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
-    padding: 8px 16px;
+    padding: 8px 18px;
     font-weight: bold;
     font-size: 11px;
 }
 
 QTabBar::tab:selected {
-    background-color: #0F172A;
-    color: #38BDF8;
-    border: 1px solid #334155;
-    border-bottom: 2px solid #38BDF8;
+    background-color: #FFFFFF;
+    color: #0EA5E9;
+    border: 1px solid #E2E8F0;
+    border-bottom: 2px solid #0EA5E9;
 }
 
 QTabBar::tab:hover {
-    background-color: #334155;
-    color: #F8FAFC;
+    background-color: #E2E8F0;
+    color: #0F172A;
 }
 
 QGroupBox {
-    background-color: #1E293B;
-    border: 1px solid #334155;
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
     border-radius: 12px;
     margin-top: 20px;
     padding: 16px;
     font-weight: bold;
     font-size: 13px;
-    color: #38BDF8;
+    color: #0EA5E9;
 }
 
 QGroupBox::title {
@@ -61,28 +64,28 @@ QGroupBox::title {
     subcontrol-position: top left;
     left: 12px;
     padding: 2px 8px;
-    background-color: #1E293B;
-    border: 1px solid #334155;
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
     border-radius: 6px;
 }
 
 QLabel {
-    color: #F8FAFC;
+    color: #0F172A;
     font-size: 12px;
 }
 
 QPushButton {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0284C7, stop:1 #0EA5E9);
-    color: #F8FAFC;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0EA5E9, stop:1 #0284C7);
+    color: #FFFFFF;
     border: none;
     border-radius: 8px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-weight: bold;
     font-size: 12px;
 }
 
 QPushButton:hover {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0EA5E9, stop:1 #38BDF8);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #38BDF8, stop:1 #0EA5E9);
 }
 
 QPushButton:pressed {
@@ -90,44 +93,47 @@ QPushButton:pressed {
 }
 
 QPushButton:disabled {
-    background: #334155;
-    color: #64748B;
+    background: #E2E8F0;
+    color: #94A3B8;
 }
 
 QPushButton#danger_btn {
-    background: #1E293B;
-    border: 1px solid #EF4444;
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
     color: #EF4444;
 }
 
 QPushButton#danger_btn:hover {
     background: #EF4444;
-    color: #F8FAFC;
+    color: #FFFFFF;
 }
 
 QPushButton#dark_btn {
-    background: #334155;
-    border: 1px solid #475569;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: #334155;
 }
 
 QPushButton#dark_btn:hover {
-    background: #475569;
+    background: #E2E8F0;
+    color: #0F172A;
 }
 
 QPushButton#accent_btn {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #EA580C, stop:1 #F97316);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F97316, stop:1 #EA580C);
+    color: #FFFFFF;
 }
 
 QPushButton#accent_btn:hover {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #F97316, stop:1 #FB923C);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #FB923C, stop:1 #F97316);
 }
 
 QComboBox {
-    background-color: #334155;
-    border: 1px solid #475569;
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
     border-radius: 8px;
     padding: 4px 8px;
-    color: #F8FAFC;
+    color: #0F172A;
     font-size: 12px;
 }
 
@@ -136,15 +142,15 @@ QComboBox::drop-down {
 }
 
 QComboBox QAbstractItemView {
-    background-color: #1E293B;
-    border: 1px solid #334155;
-    color: #F8FAFC;
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #0F172A;
     selection-background-color: #0EA5E9;
-    selection-color: #F8FAFC;
+    selection-color: #FFFFFF;
 }
 
 QCheckBox {
-    color: #F8FAFC;
+    color: #0F172A;
     font-size: 12px;
 }
 
@@ -152,8 +158,8 @@ QCheckBox::indicator {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 1px solid #475569;
-    background-color: #334155;
+    border: 1px solid #CBD5E1;
+    background-color: #FFFFFF;
 }
 
 QCheckBox::indicator:checked {
@@ -162,16 +168,16 @@ QCheckBox::indicator:checked {
 }
 
 QProgressBar {
-    background-color: #334155;
-    border: 1px solid #475569;
+    background-color: #F1F5F9;
+    border: 1px solid #CBD5E1;
     border-radius: 6px;
     text-align: center;
-    color: #F8FAFC;
+    color: #334155;
     font-weight: bold;
 }
 
 QProgressBar::chunk {
-    background-color: #38BDF8;
+    background-color: #0EA5E9;
     border-radius: 5px;
 }
 
@@ -181,19 +187,19 @@ QScrollArea {
 }
 
 QScrollBar:vertical {
-    background: #0F172A;
+    background: #F8FAFC;
     width: 8px;
     margin: 0px;
 }
 
 QScrollBar::handle:vertical {
-    background: #334155;
+    background: #CBD5E1;
     min-height: 20px;
     border-radius: 4px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: #475569;
+    background: #94A3B8;
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
@@ -203,11 +209,11 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 
 QLabel#capsule_lbl {
     font-size: 11px;
-    color: #94A3B8;
-    background-color: #334155;
+    color: #64748B;
+    background-color: #F1F5F9;
     padding: 4px 8px;
     border-radius: 6px;
-    border: 1px solid #475569;
+    border: 1px solid #E2E8F0;
 }
 """
 
@@ -443,14 +449,14 @@ class DeviceSettingsPage(QWidget):
         self.btn_widgets = []
         for i in range(4):
             btn_box = QFrame()
-            btn_box.setStyleSheet("QFrame { background: #334155; border: 1px solid #475569; border-radius: 10px; }")
+            btn_box.setStyleSheet("QFrame { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; }")
             btn_inner = QVBoxLayout(btn_box)
             h1 = QHBoxLayout()
             title = QLabel(f"{tr('hw_btn')} {i+1}")
-            title.setStyleSheet("color: #94A3B8; font-weight: bold;")
+            title.setStyleSheet("color: #475569; font-weight: bold;")
             h1.addWidget(title)
             disp = QLabel(tr("hw_not_set"))
-            disp.setStyleSheet("font-family: Consolas; font-weight: bold; color: #38BDF8;")
+            disp.setStyleSheet("font-family: Consolas; font-weight: bold; color: #0EA5E9;")
             h1.addWidget(disp, 1, Qt.AlignCenter)
             cap_btn = QPushButton("Capture")
             cap_btn.setFixedWidth(70)
@@ -495,7 +501,7 @@ class DeviceSettingsPage(QWidget):
         ota_layout.addWidget(self.ota_bar)
         
         self.ota_status_lbl = QLabel(tr("hw_event_wait"))
-        self.ota_status_lbl.setStyleSheet("color: #94A3B8; font-size: 10px;")
+        self.ota_status_lbl.setStyleSheet("color: #64748B; font-size: 10px;")
         ota_layout.addWidget(self.ota_status_lbl)
         self.ota_group.setLayout(ota_layout)
         layout.addWidget(self.ota_group)
@@ -687,9 +693,9 @@ class VoiceInputGUI(QMainWindow):
         init_layout.setAlignment(Qt.AlignCenter)
         logo_lbl = QLabel(); logo_lbl.setPixmap(get_brand_logo(80)); logo_lbl.setAlignment(Qt.AlignCenter)
         init_layout.addWidget(logo_lbl)
-        self.init_title_lbl = QLabel(tr("init_title")); self.init_title_lbl.setStyleSheet("font-size: 18px; font-weight: bold; color: #38BDF8; margin-top: 20px;")
+        self.init_title_lbl = QLabel(tr("init_title")); self.init_title_lbl.setStyleSheet("font-size: 18px; font-weight: bold; color: #0EA5E9; margin-top: 20px;")
         init_layout.addWidget(self.init_title_lbl)
-        self.init_status_lbl = QLabel(tr("init_status")); self.init_status_lbl.setStyleSheet("color: #94A3B8; margin-bottom: 20px;")
+        self.init_status_lbl = QLabel(tr("init_status")); self.init_status_lbl.setStyleSheet("color: #64748B; margin-bottom: 20px;")
         init_layout.addWidget(self.init_status_lbl)
         self.progress_bar = QProgressBar(); self.progress_bar.setRange(0, 0); self.progress_bar.setFixedWidth(300)
         init_layout.addWidget(self.progress_bar)
@@ -705,7 +711,7 @@ class VoiceInputGUI(QMainWindow):
         
         self.control_tab = QWidget(); ctrl_layout = QVBoxLayout(self.control_tab)
         self.status_label = QLabel(tr("ready")); self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #38BDF8; margin: 20px;"); ctrl_layout.addWidget(self.status_label)
+        self.status_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #0EA5E9; margin: 20px;"); ctrl_layout.addWidget(self.status_label)
         
         self.base_group = QGroupBox(tr("voice_tab")); settings_layout = QVBoxLayout(); settings_layout.setSpacing(12)
         hk_layout = QHBoxLayout(); hk_layout.addWidget(QLabel(tr("trigger_key") + ":"))
@@ -716,10 +722,10 @@ class VoiceInputGUI(QMainWindow):
         
         def add_toggle(key, title, desc):
             w = QWidget(); l = QVBoxLayout(w); l.setContentsMargins(0,0,0,0); l.setSpacing(2)
-            cb = QCheckBox(title); cb.setStyleSheet("font-weight: bold; font-size: 13px; color: #F8FAFC;")
+            cb = QCheckBox(title); cb.setStyleSheet("font-weight: bold; font-size: 13px; color: #0F172A;")
             cb.setChecked(current_config.get(key, True if key != "auto_start" else False))
             cb.stateChanged.connect(self.on_config_changed); l.addWidget(cb)
-            dl = QLabel(desc); dl.setStyleSheet("color: #94A3B8; font-size: 11px; margin-left: 24px;"); l.addWidget(dl); settings_layout.addWidget(w)
+            dl = QLabel(desc); dl.setStyleSheet("color: #64748B; font-size: 11px; margin-left: 24px;"); l.addWidget(dl); settings_layout.addWidget(w)
             return cb
         self.filler_cb = add_toggle("remove_filler", tr("filter_filler"), tr("filler_desc"))
         self.punc_cb = add_toggle("keep_punctuation", tr("smart_punc"), tr("punc_desc"))
@@ -761,7 +767,7 @@ class VoiceInputGUI(QMainWindow):
     def update_status(self, text):
         is_l = any(x in text for x in ["录音", "聆听", "Listening", "Recording"])
         self.status_label.setText(tr("listening") if is_l else tr("ready"))
-        self.status_label.setStyleSheet(f"font-size: 20px; font-weight: bold; color: {'#F87171' if is_l else '#38BDF8'}; margin: 20px;"); self.repaint()
+        self.status_label.setStyleSheet(f"font-size: 20px; font-weight: bold; color: {'#EF4444' if is_l else '#0EA5E9'}; margin: 20px;"); self.repaint()
  
     def on_uninstall(self):
         if QMessageBox.question(self, tr("msg_confirm"), tr("msg_uninstall_body"), QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes: os._exit(0)
